@@ -4,6 +4,9 @@
 // node.js starter application for Bluemix
 //------------------------------------------------------------------------------
 
+// Load environment variables
+require('dotenv').config()
+
 // This application uses express as its web server
 // for more info, see: http://expressjs.com
 var express = require('express');
@@ -13,16 +16,28 @@ var express = require('express');
 var cfenv = require('cfenv');
 
 // create a new express server
-var app = express();
+var app = module.exports = express();
 
-// serve the files out of ./public as our main files
-app.use(express.static(__dirname + '/public'));
+// Connect to database
+var db = require('./db/index.js');
+db.connect().then(db_object => {
 
-// get the app environment from Cloud Foundry
-var appEnv = cfenv.getAppEnv();
+  // Load routes
+  app.db_object = db_object
+  require('./api/routes.js')(app)
 
-// start server on the specified port and binding host
-app.listen(appEnv.port, '0.0.0.0', function() {
-  // print a message when the server starts listening
-  console.log("server starting on " + appEnv.url);
-});
+  // get the app environment from Cloud Foundry
+  var appEnv = cfenv.getAppEnv();
+
+  // start server on the specified port and binding host
+  app.listen(appEnv.port, '0.0.0.0', function() {
+    // print a message when the server starts listening
+    console.log("server starting on " + appEnv.url);
+  });
+
+
+}, err => {
+  console.log('error - can\'t connect to cloudant database. Server not running')
+})
+
+
