@@ -136,7 +136,7 @@ let addObservation = (req, res) => {
   let patient_id = req.body.patient_id
   let observation = req.body.observation
 
-
+  // TODO
 
 
 }
