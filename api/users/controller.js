@@ -182,9 +182,27 @@ let userLoggedInAndValidToken = (user) => {
   });
 }
 
+let userCanAccessPatientData = (user, patient_id) => {
+  return new Promise((resolve, reject) => {
+    let allowed = false
+    user.patients.forEach(patient => {
+      if (patient === patient_id) {
+        allowed = true;
+      }
+    })
+    if (allowed) {
+      resolve()
+    } else {
+      reject()
+    }
+  })
+}
+
 module.exports = {
   register,
   login,
   logout,
-  isLoggedIn
+  isLoggedIn,
+  userLoggedInAndValidToken,
+  userCanAccessPatientData
 }
