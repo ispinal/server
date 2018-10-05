@@ -38,7 +38,7 @@ let create = (req,res) => {
   if (user.email && user.token) {
     users.userLoggedInAndValidToken(user).then(db_user => {
 
-      if (db_user.role === 'parent' || db_user.role === 'carer') {
+      if (db_user.role === 'parent') {
         if (validPatientObject(patient)) {
           patient.role = 'patient'
 
@@ -106,7 +106,7 @@ let create = (req,res) => {
           return res.json({err: "invalid patient object"});
         }
       } else {
-        return res.json({err: "only parent's and carer's can create patients"});
+        return res.json({err: "only parent's can create patients"});
       }
     }, err => {
       return res.json(err)
