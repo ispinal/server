@@ -17,16 +17,16 @@ let register = (req, res) => {
 
         let db = db_object.use('users')
 
+        //Does user already exist?
         db.find({selector:{email:user.email}}, function(err, body) {
           if (err) {
             return res.json({err: err});
-          }
-          if (body.docs.length === 0) {
+          } else if (body.docs.length === 0) {
             db.insert(user, function(err,result) {
               if (err) {
                 return res.json({err: err});
               }
-              if (result.ok) { 
+              if (result.ok) {
                 res.sendStatus(200)
               } else {
                 return res.json({err: "Error registering"})
@@ -35,7 +35,8 @@ let register = (req, res) => {
           } else {
             return res.json({err: "user already registered"});
           }
-        })
+        });
+
       });
     } else {
       return res.json({err: "Passwords do not match"})
@@ -46,35 +47,45 @@ let register = (req, res) => {
 }
 
 let login = (req, res) => {
-  let user = req.body;
 
+
+  let user = req.body; //store request body in user variable
+
+  //call function that returns true if username and password exist in the user variable (request body)
   if (userLoginObjectIsValid(user)) {
 
-    // Check if user exists
-    let db = db_object.use('users')
+    let db = db_object.use('users'); // databse of 'users' variable set to db variable from cloudant
+    //use find method on database to match requets email
     db.find({selector:{email: user.email}}, function(err, body) {
+      //check if there is an error with the request
+      console.log(body);
       if (err) {
-        return res.json(err)
-      } 
+        return res.json(err) //return error in the response body
+      }
+      // check if the body exists and it contains the required fields
       if (body.docs.length === 1) {
-        //continue
-        let db_user = body.docs[0]
 
+        let db_user = body.docs[0]; //set variable db_user to be the object in the body of the response
+
+        //use bcrpyt to compare passwords
         bcrypt.compare(user.password, db_user.password, function(err, password_check) {
+          //check to see if password_check is true
           if (password_check) {
-            // Update database to say user is logged in
+            // if the user is arlready logged in
             if (db_user.logged_in && db_user.logged_in.status) {
               user.logged_in = db_user.logged_in
-              return res.json(user)
+              return res.json(user);
             } else {
-
-              //generate token and store in database
+              //generate token and store in database (use uuidv1 to generate the token)
               db_user.logged_in = {status: true, token: uuidv1()}
+              //inset into the database the token and status in an object
               db.insert(db_user, function(err, result) {
                 if (err) {
+                  //if error return error
                   return res.json({err: err});
                 }
-                if (result.ok) { 
+                //if result is ok then delete the rev no and password from the body and return the variable db_user on response
+                if (result.ok) {
                   delete db_user._rev
                   delete db_user.password
                   res.json(db_user);
@@ -107,7 +118,7 @@ let logout = (req, res) => {
         if (err) {
           return res.json({err: err});
         }
-        if (result.ok) { 
+        if (result.ok) {
           res.sendStatus(200)
         } else {
           return res.json({err: "Error logging out"})
@@ -160,12 +171,13 @@ let userTokenObjectIsValid = (user) => {
 }
 
 let userLoggedInAndValidToken = (user) => {
+  // console.log('fired promise 1');
   return new Promise((resolve, reject) => {
     let db = db_object.use('users');
     db.find({selector:{email: user.email}}, function(err, body) {
       if (err) {
         return reject(err)
-      } 
+      }
       if (body.docs.length === 1) {
 
         // Check user is logged in and token matches
@@ -180,6 +192,26 @@ let userLoggedInAndValidToken = (user) => {
       }
     });
   });
+}
+
+let findObservationObject = (patient_id, observation) => {
+  return new Promise((resolve, reject) => {
+    let db = db_object.use('observations_data_store');
+    db.find({selector:{patient_id: patient_id}}, function(err, body){
+      if(body.docs[0].patient_id === patient_id){
+        let observations_data_store = body.docs[0];
+        if(err){
+          return reject()
+        } else{
+          //return the whole database object
+          return resolve(observations_data_store);
+        }
+      } else {
+        return reject();
+      }
+    })
+
+})
 }
 
 let userCanAccessPatientData = (user, patient_id) => {
@@ -204,5 +236,6 @@ module.exports = {
   logout,
   isLoggedIn,
   userLoggedInAndValidToken,
-  userCanAccessPatientData
+  userCanAccessPatientData,
+  findObservationObject
 }

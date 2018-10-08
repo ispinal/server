@@ -20,8 +20,9 @@ var app = module.exports = express();
 
 // Connect to database
 var db = require('./db/index.js');
-db.connect().then(db_object => {
 
+//this is where the promise is being consumed defined in db/index.js
+db.connect().then(db_object => {
   // Load routes
   app.db_object = db_object
   require('./api/routes.js')(app)
@@ -30,7 +31,7 @@ db.connect().then(db_object => {
   var appEnv = cfenv.getAppEnv();
 
   // start server on the specified port and binding host
-  app.listen(appEnv.port, '0.0.0.0', function() {
+  app.listen(appEnv.port, appEnv.bind, function() {
     // print a message when the server starts listening
     console.log("server starting on " + appEnv.url);
   });
@@ -39,5 +40,3 @@ db.connect().then(db_object => {
 }, err => {
   console.log('error - can\'t connect to cloudant database. Server not running')
 })
-
-

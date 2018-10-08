@@ -67,7 +67,7 @@ let create = (req,res) => {
               if (err) {
                 return res.json({err: err});
               }
-              if (result) { 
+              if (result) {
 
                 // Insert Observations Data Store
                 let db = db_object.use('observations_data_store');
@@ -101,7 +101,7 @@ let create = (req,res) => {
             })
           }, err => {
             return res.json({err: "patient already exists"})
-          })          
+          })
         } else {
           return res.json({err: "invalid patient object"});
         }
@@ -136,13 +136,79 @@ let addObservation = (req, res) => {
   let patient_id = req.body.patient_id
   let observation = req.body.observation
 
-  // TODO
+  //1) Check that the user (parent/carer) is logged in and their token is valid. We created a helper function to do this in the users controller. Look at the create patient function for reference. [x]
+  if (user.email && user.token) {
+    users.userLoggedInAndValidToken(user).then(db_user => {
 
+    //2) Using the callback response from the function in 1. - we need to ensure the user's role is a parent or carer. Again the create patient function can be used for reference.
+      if (db_user.role === 'parent' || db_user.role === 'carer') {
+        //3) We then need to validate that the observation object is valid. We currently don't have a validator function for this, so one will have to be created. It can go in the patients controller for now, look at validPatientObject for reference.
 
+        if(validObservationObject(observation)){
+          users.findObservationObject(patient_id, observation)
+          .then(observations_data_store => {
+
+            let no = 0;
+            //4a) Then we need to find the observation object from the database that matches the patient id and also the type of observation (given by the 'name' field).
+            observations_data_store.metrics.forEach(el => {
+
+              if(observation.metric_name === el.name){
+                observation.values.time = Date.now();
+                let newValue = observations_data_store.metrics[no];
+                let newObservation = observation.values;
+                console.log(newObservation);
+                newValue.values.push(newObservation);
+                no ++;
+                //4b) Then we need to update the observation object with the current observation value and the current timestamp.
+                let db = db_object.use('observations_data_store');
+                //5) We also need to add the observation to the 'observations_data_store' for the correct patient. Ensure to append to the array here (i.e. add to existing values) as oppose to overwriting them.
+                db.insert(observations_data_store, function(err, result) {
+                  if(err){
+                    return res.json({err: err});
+                  }
+                  if (result.ok){
+                      console.log('observation added');
+                      res.json(200);
+                  } else {
+                    return res.json({err: "Updating reading"});
+                  }
+                });
+              } else {
+                no ++;
+              }
+            });
+          })
+          .catch(error => {
+            console.log(`${error}: ===========================================`);
+            res.sendStatus(400);
+          })
+            //TODO
+            //6) At some point we will also need to publish a new observation alert to a message broker so that any connected UI's can be notified of the update. For now we can skip this step.
+
+            //7) Then we need to return ok to the user
+        } else {
+          return res.json({err: "incorrect observation"});
+        }
+      } else {
+        return res.json({err: "you are not a parent or a carer"});
+      }
+    }, err => {
+      return res.json(err)
+    });
+  } else {
+    return res.json({err: "please specify user id and user token"});
+  }
 }
 
 let validPatientObject = (patient) => {
   return patient.name && patient.dob && patient.email
+}
+
+let validObservationObject = (observation) => {
+  let metric = observation.metric_name;
+  let measurement = observation.values.measurement;
+  let comment = observation.values.comment;
+  return metric && measurement && comment || metric && measurement;
 }
 
 module.exports = {

@@ -17,5 +17,8 @@
 	"repository": {},
 	"engines": {
 		"node": "6.x"
+	},
+	"devDependencies": {
+		"nodemon": "^1.18.4"
 	}
 }

@@ -8,7 +8,7 @@ let connect = function() {
 
     cloudant.db.list(function(err, allDbs) {
       if (!err) {
-        console.log('Connected to ispinal Cloudant Database')
+        console.log('Connected to ispinal Cloudant Database');
         db_object = cloudant.db;
         resolve(db_object);
       } else {
