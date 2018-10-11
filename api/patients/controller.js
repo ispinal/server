@@ -156,8 +156,10 @@ let addObservation = (req, res) => {
                 observation.values.time = Date.now();
                 let newValue = observations_data_store.metrics[no];
                 let newObservation = observation.values;
+
                 console.log(newObservation);
                 newValue.values.push(newObservation);
+
                 no ++;
                 //4b) Then we need to update the observation object with the current observation value and the current timestamp.
                 let db = db_object.use('observations_data_store');
@@ -168,7 +170,7 @@ let addObservation = (req, res) => {
                   }
                   if (result.ok){
                       console.log('observation added');
-                      res.json(200);
+                      return res.json(200);
                   } else {
                     return res.json({err: "Updating reading"});
                   }
@@ -180,7 +182,7 @@ let addObservation = (req, res) => {
           })
           .catch(error => {
             console.log(`${error}: ===========================================`);
-            res.sendStatus(400);
+            return res.sendStatus(400);
           })
             //TODO
             //6) At some point we will also need to publish a new observation alert to a message broker so that any connected UI's can be notified of the update. For now we can skip this step.
@@ -206,9 +208,13 @@ let validPatientObject = (patient) => {
 
 let validObservationObject = (observation) => {
   let metric = observation.metric_name;
-  let measurement = observation.values.measurement;
-  let comment = observation.values.comment;
-  return metric && measurement && comment || metric && measurement;
+  let values = observation.values;
+  if(!values.length > 1 || !isNaN(values[1])){
+    return 'object not valid';
+  } else {
+    let measurement = values.measurement;
+    return metric && measurement;
+  }
 }
 
 module.exports = {
@@ -216,3 +222,6 @@ module.exports = {
   addObservation,
   create
 }
+
+//TODO
+//3.there is a neater way to use forEach to iterate over the item and index, e.g. according to the documentation (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach):
