@@ -147,20 +147,16 @@ let addObservation = (req, res) => {
         if(validObservationObject(observation)){
           users.findObservationObject(patient_id, observation)
           .then(observations_data_store => {
-
-            let no = 0;
             //4a) Then we need to find the observation object from the database that matches the patient id and also the type of observation (given by the 'name' field).
-            observations_data_store.metrics.forEach(el => {
+            observations_data_store.metrics.forEach((el, index) => {
 
               if(observation.metric_name === el.name){
                 observation.values.time = Date.now();
-                let newValue = observations_data_store.metrics[no];
+                let newValue = observations_data_store.metrics[index];
                 let newObservation = observation.values;
 
                 console.log(newObservation);
                 newValue.values.push(newObservation);
-
-                no ++;
                 //4b) Then we need to update the observation object with the current observation value and the current timestamp.
                 let db = db_object.use('observations_data_store');
                 //5) We also need to add the observation to the 'observations_data_store' for the correct patient. Ensure to append to the array here (i.e. add to existing values) as oppose to overwriting them.
@@ -175,8 +171,6 @@ let addObservation = (req, res) => {
                     return res.json({err: "Updating reading"});
                   }
                 });
-              } else {
-                no ++;
               }
             });
           })
