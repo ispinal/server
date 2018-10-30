@@ -131,13 +131,38 @@ let patientDoesNotExist = (patient) => {
   })
 }
 
+let findObservationObject = (patient_id, observation) => {
+  return new Promise((resolve, reject) => {
+
+    let db = db_object.use('observations_data_store');
+    db.find({selector:{patient_id: patient_id}}, function(err, body){
+      if(err){
+        return reject(err);
+      } else{
+        if(body.docs.length === 1 && body.docs[0].patient_id === patient_id){
+          
+          let observations_data_store = body.docs[0];
+          if(err){
+            return reject()
+          } else {
+            //return the whole database object
+            return resolve(observations_data_store);
+          }
+        } else {
+          return reject(err)
+        }
+      }
+    })
+  })
+}
+
 let addObservation = (req, res) => {
   let user = req.body.user
   let patient_id = req.body.patient_id
   let observation = req.body.observation
 
   //1) Check that the user (parent/carer) is logged in and their token is valid. We created a helper function to do this in the users controller. Look at the create patient function for reference. [x]
-  if (user.email && user.token) {
+  if (user.email && user.token && patient_id) {
     users.userLoggedInAndValidToken(user).then(db_user => {
 
     //2) Using the callback response from the function in 1. - we need to ensure the user's role is a parent or carer. Again the create patient function can be used for reference.
@@ -145,7 +170,7 @@ let addObservation = (req, res) => {
         //3) We then need to validate that the observation object is valid. We currently don't have a validator function for this, so one will have to be created. It can go in the patients controller for now, look at validPatientObject for reference.
 
         if(validObservationObject(observation)){
-          users.findObservationObject(patient_id, observation)
+          findObservationObject(patient_id, observation)
           .then(observations_data_store => {
             //4a) Then we need to find the observation object from the database that matches the patient id and also the type of observation (given by the 'name' field).
             observations_data_store.metrics.forEach((el, index) => {
@@ -155,7 +180,6 @@ let addObservation = (req, res) => {
                 let newValue = observations_data_store.metrics[index];
                 let newObservation = observation.values;
 
-                console.log(newObservation);
                 newValue.values.push(newObservation);
                 //4b) Then we need to update the observation object with the current observation value and the current timestamp.
                 let db = db_object.use('observations_data_store');
@@ -165,10 +189,11 @@ let addObservation = (req, res) => {
                     return res.json({err: err});
                   }
                   if (result.ok){
-                      console.log('observation added');
+                    //TODO
+                    //6) At some point we will also need to publish a new observation alert to a message broker so that any connected UI's can be notified of the update. For now we can skip this step.
                       return res.json(200);
                   } else {
-                    return res.json({err: "Updating reading"});
+                    return res.json({err: "Error adding observation"});
                   }
                 });
               }
@@ -178,10 +203,6 @@ let addObservation = (req, res) => {
             console.log(`${error}: ===========================================`);
             return res.sendStatus(400);
           })
-            //TODO
-            //6) At some point we will also need to publish a new observation alert to a message broker so that any connected UI's can be notified of the update. For now we can skip this step.
-
-            //7) Then we need to return ok to the user
         } else {
           return res.json({err: "incorrect observation"});
         }
@@ -192,7 +213,7 @@ let addObservation = (req, res) => {
       return res.json(err)
     });
   } else {
-    return res.json({err: "please specify user id and user token"});
+    return res.json({err: "please specify user id, user token and pateint id"});
   }
 }
 
@@ -203,12 +224,15 @@ let validPatientObject = (patient) => {
 let validObservationObject = (observation) => {
   let metric = observation.metric_name;
   let values = observation.values;
-  if(!values.length > 1 || !isNaN(values[1])){
-    return 'object not valid';
-  } else {
-    let measurement = values.measurement;
-    return metric && measurement;
-  }
+
+  if (values.length === 0) { return false }
+  let valid_values = true
+  values.forEach(val => {
+    if (!(val.value_name && val.value && val.units)) {
+      valid_values = false
+    }
+  })
+  return metric && valid_values
 }
 
 module.exports = {

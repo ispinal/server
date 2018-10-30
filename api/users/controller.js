@@ -195,33 +195,6 @@ let userLoggedInAndValidToken = (user) => {
 }
 
 
-let findObservationObject = (patient_id, observation) => {
-  return new Promise((resolve, reject) => {
-
-    let db = db_object.use('observations_data_store');
-    db.find({selector:{patient_id: patient_id}}, function(err, body){
-      if(err){
-        return reject(err);
-      } else{
-        if(body.docs.length === 1){
-          if(body.docs[0].patient_id === patient_id){
-            let observations_data_store = body.docs[0];
-            if(err){
-              return reject()
-            } else{
-              //return the whole database object
-              return resolve(observations_data_store);
-            }
-          } else {
-            return reject();
-          }
-        } else {
-          return reject(err)
-        }
-      }
-    })
-})
-}
 //============== IN CASE I MESS UP I HAVE A COPY =================//
 // let findObservationObject = (patient_id, observation) => {
 //   return new Promise((resolve, reject) => {
@@ -275,6 +248,5 @@ module.exports = {
   logout,
   isLoggedIn,
   userLoggedInAndValidToken,
-  userCanAccessPatientData,
-  findObservationObject
+  userCanAccessPatientData
 }
