@@ -1,10 +1,10 @@
 var Cloudant = require('@cloudant/cloudant');
-var username = process.env.CLOUDANT_USERNAME;
-var password = process.env.CLOUDANT_PASSWORD;
+var vcapServices = require('vcap_services');
+var credentials = vcapServices.getCredentials('cloudantNoSQLDB');
 
 let connect = function() {
   return new Promise((resolve, reject) => {
-    var cloudant = Cloudant({account:username, password:password});
+    var cloudant = Cloudant({account:credentials.username, password:credentials.password});
 
     cloudant.db.list(function(err, allDbs) {
       if (!err) {
