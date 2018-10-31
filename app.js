@@ -10,6 +10,8 @@ require('dotenv').config()
 // This application uses express as its web server
 // for more info, see: http://expressjs.com
 var express = require('express');
+var cors = require('cors')
+app.use(cors())
 
 // cfenv provides access to your Cloud Foundry environment
 // for more info, see: https://www.npmjs.com/package/cfenv
