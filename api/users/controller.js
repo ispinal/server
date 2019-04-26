@@ -1,3 +1,19 @@
+/*******************************************************************************
+  * Copyright 2019 IBM Corp.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *******************************************************************************/
+
 var db_object = require('../../app').db_object;
 
 const bcrypt = require('bcrypt');
@@ -11,33 +27,33 @@ let register = (req, res) => {
     if (user.password === user.confirm_password) {
       bcrypt.hash(user.password, saltRounds, function(err, hash) {
 
-        // Store in database
-        user.password = hash
-        delete user.confirm_password
+      // Store in database
+      user.password = hash
+      delete user.confirm_password
 
-        let db = db_object.use('users')
+      let db = db_object.use('users')
 
-        //Does user already exist?
-        db.find({selector:{email:user.email}}, function(err, body) {
-          if (err) {
-            return res.json({err: err});
-          } else if (body.docs.length === 0) {
-            db.insert(user, function(err,result) {
-              if (err) {
-                return res.json({err: err});
-              }
-              if (result.ok) {
-                res.sendStatus(200)
-              } else {
-                return res.json({err: "Error registering"})
-              }
-            });
-          } else {
-            return res.json({err: "user already registered"});
-          }
-        });
-
+      //Does user already exist?
+      db.find({selector:{email:user.email}}, function(err, body) {
+        if (err) {
+          return res.json({err: err});
+        } else if (body.docs.length === 0) {
+          db.insert(user, function(err,result) {
+            if (err) {
+              return res.json({err: err});
+            }
+            if (result.ok) {
+              res.sendStatus(200)
+            } else {
+              return res.json({err: "Error registering"})
+            }
+          });
+        } else {
+          return res.json({err: "user already registered"});
+        }
       });
+
+    });
     } else {
       return res.json({err: "Passwords do not match"})
     }
@@ -47,8 +63,6 @@ let register = (req, res) => {
 }
 
 let login = (req, res) => {
-
-
   let user = req.body; //store request body in user variable
 
   //call function that returns true if username and password exist in the user variable (request body)
@@ -193,38 +207,6 @@ let userLoggedInAndValidToken = (user) => {
     });
   });
 }
-
-
-//============== IN CASE I MESS UP I HAVE A COPY =================//
-// let findObservationObject = (patient_id, observation) => {
-//   return new Promise((resolve, reject) => {
-//
-//     let db = db_object.use('observations_data_store');
-//
-//     if(){
-//
-//     }
-//
-//     db.find({selector:{patient_id: patient_id}}, function(err, body){
-//
-//       if(body.docs[0].patient_id === patient_id){
-//         let observations_data_store = body.docs[0];
-//
-//         if(err){
-//           return reject()
-//         } else{
-//           //return the whole database object
-//           return resolve(observations_data_store);
-//         }
-//
-//       } else {
-//         return reject();
-//       }
-//
-//     })
-//
-// })
-// }
 
 let userCanAccessPatientData = (user, patient_id) => {
   return new Promise((resolve, reject) => {

@@ -1,3 +1,19 @@
+/*******************************************************************************
+  * Copyright 2019 IBM Corp.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *******************************************************************************/
+
 var db_object = require('../../app').db_object;
 var users = require('../users/controller.js');
 let config = require('../../config/config.js');
@@ -72,10 +88,10 @@ let create = (req,res) => {
                 // Insert Observations Data Store
                 let db = db_object.use('observations_data_store');
                 db.insert(observations_data_store_object, function(err, result) {
-                   if (err) {
-                     return res.json({err: err});
-                   }
-                   if (result.ok) {
+                 if (err) {
+                   return res.json({err: err});
+                 }
+                 if (result.ok) {
 
                     // Update User
                     let db = db_object.use('users');
@@ -91,9 +107,9 @@ let create = (req,res) => {
                       }
                     });
 
-                   } else {
+                  } else {
                     return res.json({err: "Error inserting observations data store"})
-                   }
+                  }
                 })
               } else {
                 return res.json({err: "Error inserting observations"})
@@ -166,7 +182,7 @@ let addObservation = (req, res) => {
     users.userLoggedInAndValidToken(user).then(db_user => {
 
     //2) Using the callback response from the function in 1. - we need to ensure the user's role is a parent or carer. Again the create patient function can be used for reference.
-      if (db_user.role === 'parent' || db_user.role === 'carer') {
+    if (db_user.role === 'parent' || db_user.role === 'carer') {
         //3) We then need to validate that the observation object is valid. We currently don't have a validator function for this, so one will have to be created. It can go in the patients controller for now, look at validPatientObject for reference.
 
         if(validObservationObject(observation)){
@@ -191,7 +207,7 @@ let addObservation = (req, res) => {
                   if (result.ok){
                     //TODO
                     //6) At some point we will also need to publish a new observation alert to a message broker so that any connected UI's can be notified of the update. For now we can skip this step.
-                      return res.json(200);
+                    return res.json(200);
                   } else {
                     return res.json({err: "Error adding observation"});
                   }
@@ -226,7 +242,7 @@ let validObservationObject = (observation) => {
   let values = observation.values;
 
   if (values.length === 0) { return false }
-  let valid_values = true
+    let valid_values = true
   values.forEach(val => {
     if (!(val.value_name && val.value && val.units)) {
       valid_values = false
