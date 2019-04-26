@@ -1,6 +1,6 @@
 # server
 
-This Node.js application provides back-end functionality for ispinal.
+This Node.js application provides back-end functionality for iSpinal.
 
 ## Run the app locally
 
